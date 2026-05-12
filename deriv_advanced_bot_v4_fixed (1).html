@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deriv Advanced Bot v4</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080c10;--bg2:#0d1218;--bg3:#111820;--bg4:#161e28;
+  --border:#1a2535;--border2:#243044;
+  --green:#00e676;--green2:#00c853;--greendim:#003d1a;
+  --red:#ff1744;--reddim:#3d0010;
+  --amber:#ffa000;--amberdim:#3d2600;
+  --blue:#40c4ff;--bluedim:#003d5a;
+  --purple:#d500f9;--purpledim:#2d0040;
+  --text:#c8d8e8;--text2:#7a94b0;--text3:#3d5068;
+  --cyan:#00e5ff;
+}
+body{font-family:'Share Tech Mono',monospace;font-size:12px;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ── HEADER ── */
+.header{background:linear-gradient(135deg,#060a10 0%,#0d1a28 100%);border-bottom:1px solid var(--border2);padding:10px 16px;display:flex;align-items:center;gap:12px;}
+.logo{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;color:var(--cyan);letter-spacing:2px;text-shadow:0 0 20px rgba(0,229,255,0.4);}
+.logo span{color:var(--amber);}
+.version{font-size:9px;color:var(--text3);letter-spacing:1px;margin-top:2px;}
+.header-spacer{flex:1;}
+#modeLine{font-size:10px;padding:3px 10px;border-radius:3px;letter-spacing:1px;}
+#modeLine.sim{background:var(--greendim);color:var(--green);border:1px solid #00e67640;}
+#modeLine.real{background:var(--reddim);color:var(--red);border:1px solid #ff174440;animation:pulse-red 2s infinite;}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 #ff174440;}50%{box-shadow:0 0 0 4px #ff174410;}}
+
+/* ── LAYOUT ── */
+.wrap{display:grid;grid-template-columns:1fr 300px;gap:0;height:calc(100vh - 48px);}
+.main-col{overflow-y:auto;padding:12px;border-right:1px solid var(--border);}
+.side-col{overflow-y:auto;padding:10px;background:var(--bg2);}
+
+/* ── PANELS ── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:10px;}
+.panel-title{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;}
+
+/* ── MODE TOGGLE ── */
+.mode-toggle{display:flex;background:var(--bg);border:1px solid var(--border2);border-radius:6px;overflow:hidden;margin-bottom:10px;}
+.mode-tab{flex:1;padding:7px;text-align:center;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px;color:var(--text3);transition:all 0.2s;border:none;background:none;}
+.mode-tab.active{background:var(--bg4);color:var(--cyan);border-bottom:2px solid var(--cyan);}
+.mode-tab:hover:not(.active){color:var(--text2);}
+
+/* ── INPUTS ── */
+label{display:block;font-size:9px;color:var(--text3);margin-bottom:3px;letter-spacing:1px;}
+input,select{background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:12px;padding:5px 8px;border-radius:4px;outline:none;width:100%;}
+input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(0,229,255,0.15);}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.field{flex:1;min-width:60px;}
+
+/* ── BUTTONS ── */
+button{font-family:'Share Tech Mono',monospace;font-size:12px;padding:6px 12px;border-radius:4px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;transition:all 0.15s;letter-spacing:0.5px;}
+button:hover{background:var(--bg4);}
+button.go{border-color:var(--green);color:var(--green);background:var(--greendim);}
+button.go:hover{background:#005528;box-shadow:0 0 10px rgba(0,230,118,0.2);}
+button.stop{border-color:var(--red);color:var(--red);background:var(--reddim);}
+button.stop:hover{background:#5a0018;}
+button:disabled{opacity:0.4;cursor:default;}
+
+/* ── PRICE DISPLAY ── */
+.price-area{text-align:center;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px;}
+#priceBox{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;letter-spacing:2px;transition:color 0.15s;}
+#digitRow{font-size:11px;color:var(--text3);margin-top:2px;}
+#lastDigitBig{font-size:40px;font-weight:900;font-family:'Orbitron',sans-serif;margin-top:4px;transition:all 0.1s;}
+
+/* ── DIGIT TRACK ── */
+#dtrack{display:flex;gap:2px;flex-wrap:wrap;padding:6px 0;}
+.dc{width:20px;height:20px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;background:var(--bg3);color:var(--text3);border:1px solid var(--border);transition:all 0.1s;}
+.dc.hi{color:var(--blue);border-color:#1a4060;background:#051520;}
+.dc.lo{color:var(--purple);border-color:#3a1050;background:#0d0520;}
+.dc.en{color:#fff;border-color:var(--amber);background:var(--amberdim);box-shadow:0 0 6px rgba(255,160,0,0.5);}
+.dc.new{animation:flash 0.3s ease;}
+@keyframes flash{0%{transform:scale(1.4);}100%{transform:scale(1);}}
+
+/* ── CONFIRM BOXES ── */
+.conf-row{display:flex;gap:4px;align-items:center;margin-bottom:6px;}
+.conf-label{font-size:9px;color:var(--text3);letter-spacing:1px;min-width:90px;}
+.cstep{width:28px;height:24px;border:1px solid var(--border2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);}
+.cstep.ok{color:var(--green);border-color:#00e67640;background:var(--greendim);}
+.cstep.cur{color:var(--amber);border-color:#ffa00040;background:var(--amberdim);animation:blink 0.7s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* ══ ENTRY DIGIT HERO (BIG PROMINENT DISPLAY) ══ */
+.entry-hero{
+  background:linear-gradient(135deg,#1a0d00,#2d1800);
+  border:2px solid var(--amber);
+  border-radius:10px;
+  padding:14px;
+  margin-bottom:10px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  box-shadow:0 0 20px rgba(255,160,0,0.15);
+}
+.entry-hero-label{
+  font-family:'Orbitron',sans-serif;
+  font-size:9px;
+  letter-spacing:2px;
+  color:var(--amber);
+  margin-bottom:4px;
+}
+.entry-hero-digit{
+  font-family:'Orbitron',sans-serif;
+  font-size:64px;
+  font-weight:900;
+  color:var(--amber);
+  line-height:1;
+  text-shadow:0 0 30px rgba(255,160,0,0.6);
+  min-width:80px;
+  text-align:center;
+}
+.entry-hero-digit.none{color:var(--text3);font-size:40px;text-shadow:none;}
+.entry-hero-info{flex:1;}
+.entry-hero-dir{
+  font-family:'Orbitron',sans-serif;
+  font-size:14px;
+  font-weight:700;
+  margin-bottom:6px;
+}
+.entry-hero-dir.over{color:var(--blue);}
+.entry-hero-dir.under{color:var(--purple);}
+.entry-hero-dir.none{color:var(--text3);}
+.entry-hero-status{font-size:10px;color:var(--text2);line-height:1.5;}
+
+/* ── AUTO SCAN STATUS ── */
+.auto-scan{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.scan-box{background:var(--bg);border:1px solid var(--border2);border-radius:5px;padding:8px;text-align:center;}
+.scan-box.active-over{border-color:var(--blue);box-shadow:0 0 8px rgba(64,196,255,0.2);}
+.scan-box.active-under{border-color:var(--purple);box-shadow:0 0 8px rgba(213,0,249,0.2);}
+.scan-box.locked{border-color:var(--amber);box-shadow:0 0 8px rgba(255,160,0,0.2);}
+.scan-title{font-size:9px;letter-spacing:1px;color:var(--text3);margin-bottom:4px;}
+.scan-count{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;}
+.scan-sub{font-size:9px;color:var(--text3);margin-top:2px;}
+.scan-over .scan-count{color:var(--blue);}
+.scan-under .scan-count{color:var(--purple);}
+.scan-trig{font-size:11px;font-family:'Orbitron',sans-serif;font-weight:700;margin-top:4px;}
+.scan-trig.set{color:var(--amber);}
+.scan-trig.none{color:var(--text3);font-size:9px;font-family:'Share Tech Mono',monospace;font-weight:normal;}
+.scan-trig.ready{color:var(--green);font-size:13px;}
+
+/* ── MODE BADGE ── */
+#modeBadge{font-size:9px;padding:2px 8px;border-radius:3px;display:inline-block;margin-bottom:5px;letter-spacing:1px;}
+#modeBadge.cm{background:var(--greendim);color:var(--green);border:1px solid #00e67640;}
+#modeBadge.mg{background:var(--amberdim);color:var(--amber);border:1px solid #ffa00040;}
+#modeBadge.au{background:var(--bluedim);color:var(--blue);border:1px solid #40c4ff40;}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;}
+.stat{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:6px 8px;}
+.sv{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;}
+.sl{font-size:9px;color:var(--text3);margin-top:2px;letter-spacing:1px;}
+.green{color:var(--green);} .red{color:var(--red);} .amber{color:var(--amber);} .blue{color:var(--blue);}
+
+/* ── SIDE PANEL ── */
+.sbox{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:8px;margin-bottom:6px;text-align:center;}
+.sv2{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;}
+.sl2{font-size:9px;color:var(--text3);margin-top:2px;letter-spacing:1px;}
+
+/* ── SIDE ENTRY DIGIT BIG ── */
+#sideEntryBox{background:linear-gradient(135deg,#1a0d00,#2d1800);border:2px solid var(--amber);box-shadow:0 0 12px rgba(255,160,0,0.2);}
+#sideEntryDigit{font-family:'Orbitron',sans-serif;font-size:40px;font-weight:900;color:var(--amber);text-shadow:0 0 20px rgba(255,160,0,0.5);line-height:1.1;}
+
+#sleepBox{display:none;}
+#sleepBox.show{display:block;}
+#sleepNum{font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;color:var(--amber);}
+
+/* ── LOG ── */
+#log{background:var(--bg);border:1px solid var(--border);border-radius:4px;height:120px;overflow-y:auto;padding:5px 7px;}
+.lg{padding:1px 0;font-size:10px;color:var(--text3);}
+.lg.g{color:var(--green);}
+.lg.r{color:var(--red);}
+.lg.w{color:var(--amber);}
+.lg.i{color:var(--blue);}
+.lg.h{color:var(--text2);}
+.lg.p{color:var(--purple);}
+
+/* ── API ROW ── */
+#apiRow{background:linear-gradient(135deg,#050d0f,#0a1a12);border:1px solid #1a3a2a;border-radius:5px;padding:8px 10px;margin-bottom:8px;}
+#apiRow label{color:var(--green);}
+#apiToken{font-size:11px;}
+#realBtn{border-color:var(--blue);color:var(--blue);margin-top:6px;width:100%;}
+#realBtn.live{border-color:var(--red);color:var(--red);background:var(--reddim);}
+#acctBox{font-size:10px;color:var(--text3);margin-top:4px;}
+
+/* ── TRADE ALERT ── */
+#tradeAlert{position:fixed;top:56px;left:50%;transform:translateX(-50%);padding:8px 20px;border-radius:5px;font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:1px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:99;}
+#tradeAlert.win{background:var(--greendim);color:var(--green);border:1px solid var(--green);opacity:1;}
+#tradeAlert.loss{background:var(--reddim);color:var(--red);border:1px solid var(--red);opacity:1;}
+#tradeAlert.trade{background:var(--amberdim);color:var(--amber);border:1px solid var(--amber);opacity:1;}
+
+/* ── PHASEINFO ── */
+#phaseBox{font-size:10px;color:var(--text2);margin-bottom:2px;}
+#engMsg{font-size:10px;color:var(--text3);min-height:14px;margin-bottom:6px;}
+
+hr{border:none;border-top:1px solid var(--border);margin:8px 0;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">DERIV<span>BOT</span> <span style="color:var(--text3);font-size:11px">v4</span></div>
+    <div class="version">FOCUS DIGIT · 30MIN AUTO-ROTATE · CONSECUTIVE CONFIRM</div>
+  </div>
+  <div class="header-spacer"></div>
+  <div id="modeLine" class="sim">◉ SIM MODE</div>
+</div>
+
+<div id="tradeAlert"></div>
+
+<div class="wrap">
+<div class="main-col">
+
+  <!-- MODE TOGGLE -->
+  <div class="mode-toggle">
+    <button class="mode-tab active" id="tabManual" onclick="switchMode('manual')">⚙ MANUAL MODE</button>
+    <button class="mode-tab" id="tabAuto" onclick="switchMode('auto')">⚡ AUTO SCAN MODE</button>
+  </div>
+
+  <!-- ══ ENTRY DIGIT HERO ══ -->
+  <div class="entry-hero" id="entryHero">
+    <div>
+      <div class="entry-hero-label">ENTRY DIGIT</div>
+      <div class="entry-hero-digit none" id="heroDigit">–</div>
+    </div>
+    <div class="entry-hero-info">
+      <div class="entry-hero-dir none" id="heroDir">AWAITING CONFIRMATION</div>
+      <div class="entry-hero-status" id="heroStatus">Watching all digits for pattern...</div>
+    </div>
+  </div>
+
+  <!-- ══ FOCUS DIGIT PANEL ══ -->
+  <div id="focusPanel" style="background:linear-gradient(135deg,#050f1a,#091828);border:1px solid var(--cyan);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:14px;">
+    <div style="text-align:center;min-width:70px;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;color:var(--cyan);margin-bottom:2px;">FOCUS DIGIT</div>
+      <div id="focusDigitDisplay" style="font-family:'Orbitron',sans-serif;font-size:52px;font-weight:900;color:var(--cyan);line-height:1;text-shadow:0 0 24px rgba(0,229,255,0.5);">–</div>
+    </div>
+    <div style="flex:1;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <div id="focusStatusBadge" style="font-size:9px;padding:2px 8px;border-radius:3px;background:var(--bg3);color:var(--text3);border:1px solid var(--border2);letter-spacing:1px;">IDLE</div>
+        <div id="focusTimerDisplay" style="font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:var(--cyan);">30:00</div>
+        <div style="font-size:9px;color:var(--text3);">until rotation</div>
+      </div>
+      <div style="display:flex;gap:5px;align-items:center;margin-bottom:4px;">
+        <span style="font-size:9px;color:var(--text3);min-width:80px;">CONSEC NEXT:</span>
+        <div id="fcs0" class="cstep">?</div>
+        <div id="fcs1" class="cstep">?</div>
+        <div id="fcs2" class="cstep">?</div>
+        <span id="focusConsecDir" style="font-size:9px;color:var(--text3);margin-left:4px;">—</span>
+      </div>
+      <div id="focusMsg" style="font-size:10px;color:var(--text2);">Start bot to activate focus digit monitoring</div>
+    </div>
+  </div>
+  <!-- MANUAL PANEL -->
+  <div id="manualPanel">
+    <div class="panel">
+      <div class="panel-title">Manual Configuration</div>
+      <div class="row">
+        <div class="field"><label>MARKET</label>
+          <select id="mktSel">
+            <option value="1HZ10V">Vol 10s (1Hz)</option>
+            <option value="R_10">Volatility 10</option>
+            <option value="R_25">Volatility 25</option>
+            <option value="R_50">Volatility 50</option>
+            <option value="R_75">Volatility 75</option>
+            <option value="R_100">Volatility 100</option>
+          </select>
+        </div>
+        <div class="field"><label>DIRECTION</label>
+          <select id="dirSel">
+            <option value="OVER">Over 5</option>
+            <option value="UNDER">Under 4</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>SIM BAL ($)</label><input type="number" id="simBal" value="100" min="1" step="1"></div>
+        <div class="field"><label>BASE STAKE ($)</label><input type="number" id="baseStake" value="0.35" min="0.35" step="0.01"></div>
+        <div class="field"><label>MG MULT</label><input type="number" id="mgMult" value="2" min="1.1" max="5" step="0.1"></div>
+        <div class="field"><label>SL (LOSSES)</label><input type="number" id="slCount" value="4" min="1" max="20"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTO PANEL -->
+  <div id="autoPanel" style="display:none;">
+    <div class="panel">
+      <div class="panel-title">Auto Scan Configuration</div>
+      <div class="row">
+        <div class="field"><label>MARKET</label>
+          <select id="mktSelAuto">
+            <option value="1HZ10V">Vol 10s (1Hz)</option>
+            <option value="R_10">Volatility 10</option>
+            <option value="R_25">Volatility 25</option>
+            <option value="R_50">Volatility 50</option>
+            <option value="R_75">Volatility 75</option>
+            <option value="R_100">Volatility 100</option>
+          </select>
+        </div>
+        <div class="field"><label>SIM BAL ($)</label><input type="number" id="simBalAuto" value="100" min="1" step="1"></div>
+        <div class="field"><label>BASE STAKE ($)</label><input type="number" id="baseStakeAuto" value="0.35" min="0.35" step="0.01"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>MG MULT</label><input type="number" id="mgMultAuto" value="2" min="1.1" max="5" step="0.1"></div>
+        <div class="field"><label>SL (LOSSES)</label><input type="number" id="slCountAuto" value="4" min="1" max="20"></div>
+      </div>
+      <!-- AUTO SCAN STATUS -->
+      <div class="auto-scan" id="autoScanBoxes">
+        <div class="scan-box scan-over" id="overScanBox">
+          <div class="scan-title">◀ OVER 5 SCANNER</div>
+          <div class="scan-count" id="overConfCount">0</div>
+          <div class="scan-sub">0-4 confirms / 3</div>
+          <div class="scan-trig none" id="overTrigDigit">scanning...</div>
+        </div>
+        <div class="scan-box scan-under" id="underScanBox">
+          <div class="scan-title">▶ UNDER 4 SCANNER</div>
+          <div class="scan-count" id="underConfCount">0</div>
+          <div class="scan-sub">5-9 confirms / 3</div>
+          <div class="scan-trig none" id="underTrigDigit">scanning...</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text2);padding:4px 0;" id="autoStatusMsg">
+        ◈ Auto scanner will detect patterns automatically
+      </div>
+    </div>
+  </div>
+
+  <!-- API / REAL MODE -->
+  <div id="apiRow">
+    <div class="panel-title" style="color:var(--green);">REAL ACCOUNT</div>
+    <div><label>API TOKEN</label><input type="password" id="apiToken" placeholder="Paste your Deriv API token here..."></div>
+    <div style="font-size:9px;color:var(--text3);margin-top:4px;margin-bottom:4px;" id="authHint">① Paste token above &nbsp;②Click <b style="color:var(--green)">Connect</b> &nbsp;③ Click <b style="color:var(--cyan)">⚡ Enable Real Trading</b></div>
+    <button id="realBtn" onclick="toggleRealMode()">⚡ Enable Real Trading</button>
+    <div id="acctBox">not authenticated</div>
+  </div>
+
+  <!-- CONNECT + BOT CONTROLS -->
+  <div class="row">
+    <button id="connectBtn" onclick="toggleConnect()">Connect</button>
+    <span id="statusBar" style="font-size:10px;color:var(--text3);align-self:center;">◉ Disconnected</span>
+    <div style="flex:1;"></div>
+    <button id="startBtn" class="go" onclick="toggleBot()" disabled>▶ Start Bot</button>
+    <button onclick="resetSim()">Reset</button>
+  </div>
+  <hr>
+
+  <!-- STATE / CONFIRM -->
+  <div id="modeBadge" class="cm">CONFIRM MODE</div>
+  <div id="phaseBox">State: IDLE</div>
+  <div id="engMsg">--</div>
+
+  <!-- MANUAL CONFIRMS -->
+  <div id="manualConf">
+    <div class="conf-row">
+      <span class="conf-label">CONFIRMS:</span>
+      <div class="cstep" id="cs0">?</div>
+      <div class="cstep" id="cs1">?</div>
+      <div class="cstep" id="cs2">?</div>
+      <span style="font-size:9px;color:var(--text3);margin-left:6px;" id="manualConfInfo">waiting...</span>
+    </div>
+  </div>
+
+  <!-- AUTO CONFIRMS -->
+  <div id="autoConf" style="display:none;">
+    <div class="conf-row">
+      <span class="conf-label" style="color:var(--blue);">OVER CONF:</span>
+      <div class="cstep" id="acs0">?</div>
+      <div class="cstep" id="acs1">?</div>
+      <div class="cstep" id="acs2">?</div>
+    </div>
+    <div class="conf-row">
+      <span class="conf-label" style="color:var(--purple);">UNDER CONF:</span>
+      <div class="cstep" id="ucs0">?</div>
+      <div class="cstep" id="ucs1">?</div>
+      <div class="cstep" id="ucs2">?</div>
+    </div>
+  </div>
+  <hr>
+
+  <!-- PRICE DISPLAY -->
+  <div class="price-area">
+    <div id="digitRow">market: -- | digit: --</div>
+    <div id="priceBox" style="color:var(--text);">--</div>
+    <div id="lastDigitBig" style="color:var(--text3);">-</div>
+  </div>
+  <div id="dtrack"></div>
+  <hr>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><div class="sv" id="sv0">$100.00</div><div class="sl" id="sl0">SIM BALANCE</div></div>
+    <div class="stat"><div class="sv" id="sv1">0 / 0</div><div class="sl">WIN / LOSS</div></div>
+    <div class="stat"><div class="sv green" id="sv2">$0.00</div><div class="sl">NET P/L</div></div>
+    <div class="stat"><div class="sv amber" id="sv3">L0 · $0.35</div><div class="sl">MG · STAKE</div></div>
+    <div class="stat" style="grid-column:1/-1"><div class="sv red" id="sv4">$0.00</div><div class="sl">CHAIN LOSS TOTAL</div></div>
+  </div>
+
+  <!-- LOG -->
+  <div class="panel-title" style="margin-top:4px;">TRADE LOG</div>
+  <div id="log"></div>
+
+</div><!-- end main-col -->
+
+<!-- SIDE PANEL -->
+<div class="side-col">
+  <div class="sbox" id="sideEntryBox">
+    <div class="sl2" style="color:var(--amber);">ENTRY DIGIT</div>
+    <div id="sideEntryDigit">–</div>
+    <div style="font-size:9px;color:var(--amber);margin-top:2px;" id="sideDirLabel">–</div>
+  </div>
+  <div class="sbox">
+    <div class="sl2">STATE</div>
+    <div class="sv2" id="rState" style="font-size:11px;color:var(--text3);">IDLE</div>
+  </div>
+  <div class="sbox" id="sleepBox">
+    <div class="sl2">WIN COOLDOWN</div>
+    <div id="sleepNum">15</div>
+    <div class="sl2">seconds</div>
+  </div>
+  <div class="sbox">
+    <div class="sl2">MODE</div>
+    <div class="sv2" id="rMode" style="font-size:10px;color:var(--cyan);">MANUAL</div>
+  </div>
+  <div class="sbox">
+    <div class="sl2">DIRECTION</div>
+    <div class="sv2" id="rDir" style="color:var(--blue);">–</div>
+  </div>
+  <div class="sbox">
+    <div class="sl2">CONFIRMS</div>
+    <div class="sv2" id="rConf">0 / 3</div>
+  </div>
+  <div class="sbox">
+    <div class="sl2">MG LEVEL</div>
+    <div class="sv2 amber" id="rMG">L0</div>
+  </div>
+  <div class="sbox">
+    <div class="sl2">NEXT STAKE</div>
+    <div class="sv2" id="rStake">$0.35</div>
+  </div>
+  <div class="sbox">
+    <div class="sl2">CHAIN LOSS</div>
+    <div class="sv2 red" id="rChain">$0.00</div>
+  </div>
+  <div class="sbox">
+    <div class="sl2">LAST DIGIT</div>
+    <div class="sv2" id="rLastD" style="font-size:24px;font-family:'Orbitron',sans-serif;">-</div>
+  </div>
+  <!-- digit frequency -->
+  <div class="sbox">
+    <div class="sl2" style="margin-bottom:5px;">DIGIT FREQ (last 50)</div>
+    <div id="dfreq" style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px;"></div>
+  </div>
+</div>
+</div><!-- end wrap -->
+
+<script>
+var WS_URL   = 'wss://ws.binaryws.com/websockets/v3?app_id=1089';
+var PAYOUT   = 0.95;
+var SLP_SECS = 15;
+var FOCUS_ROTATE_MS = 30 * 60 * 1000;
+
+var ws=null, connected=false, running=false, inTrade=false;
+var simBal=100, simWins=0, simLosses=0, simPL=0;
+var baseStake=0.35, mgMult=2, slMax=4;
+var mgLevel=0, currentStake=0.35, slCount=0, chainLoss=0;
+var pendingSimTrade=null;
+var botMode='manual';
+var fsmState='idle', sleepTimer=null;
+var realMode=false, apiAuthed=false, realAcctId='', realBalance=0, realCurrency='USD';
+var allD=[], dCnt=new Array(10).fill(0);
+var direction='OVER';
+
+// Focus digit state
+var focusDigit=-1;
+var focusCountdownSec=0;
+var focusCountdownInterval=null;
+
+var fc={
+  lastTickDigit:-1,
+  consecCount:0,
+  consecDir:null,
+  locked:false,
+  tradeDir:null,
+  mgActive:false,
+  mgDir:null
+};
+
+// kept for compat
+var man={confirms:0,candidateDigit:-1,lastSeen:-1,locked:false,mgActive:false,mgDir:null};
+var overScan={confirms:0,candidateDigit:-1,lastSeen:-1,locked:false,mgActive:false};
+var underScan={confirms:0,candidateDigit:-1,lastSeen:-1,locked:false,mgActive:false};
+var autoDir=null;
+
+function g(id){return document.getElementById(id);}
+function lastDigit(raw){var s=parseFloat(raw).toFixed(2);return parseInt(s[s.length-1]);}
+function isLow(d){return d>=0&&d<=4;}
+function isHigh(d){return d>=5&&d<=9;}
+
+function log(msg,cls){
+  var box=g('log'),el=document.createElement('div');
+  el.className='lg '+(cls||'');
+  var t=new Date().toLocaleTimeString('en-GB',{hour12:false});
+  el.textContent='['+t+'] '+msg;
+  box.insertBefore(el,box.firstChild);
+  if(box.children.length>200)box.removeChild(box.lastChild);
+}
+
+function flash(msg,type){
+  var a=g('tradeAlert');
+  a.textContent=msg;a.className=type;
+  clearTimeout(a._t);
+  a._t=setTimeout(function(){a.className='';},2500);
+}
+
+// ── FOCUS DIGIT ──────────────────────────────────────────────
+function pickFocusDigit(){
+  if(allD.length>10){
+    var last=allD.slice(-200), cnt=new Array(10).fill(0);
+    last.forEach(function(d){cnt[d]++;});
+    var best=0;
+    for(var i=1;i<10;i++) if(cnt[i]>cnt[best]) best=i;
+    return best;
+  }
+  return Math.floor(Math.random()*10);
+}
+
+function setFocusDigit(d){
+  focusDigit=d;
+  resetFocusConfirm();
+  g('focusDigitDisplay').textContent=d;
+  g('focusStatusBadge').textContent='ACTIVE';
+  g('focusStatusBadge').style.cssText='font-size:9px;padding:2px 8px;border-radius:3px;background:var(--bluedim);color:var(--blue);border:1px solid #40c4ff40;letter-spacing:1px;';
+  log('Focus digit → '+d+' | monitoring consecutive next-digit patterns','i');
+  updateFocusDisplay();
+}
+
+function rotateFocusDigit(){
+  var old=focusDigit, nd=pickFocusDigit();
+  if(nd===old && allD.length>10) nd=(nd+3)%10;
+  log('⏱ 30min rotation: '+old+' → '+nd,'w');
+  flash('↺ Focus digit: '+old+' → '+nd,'trade');
+  setFocusDigit(nd);
+  startFocusCountdown();
+}
+
+function startFocusCountdown(){
+  if(focusCountdownInterval) clearInterval(focusCountdownInterval);
+  focusCountdownSec=FOCUS_ROTATE_MS/1000;
+  focusCountdownInterval=setInterval(function(){
+    if(!running) return;
+    focusCountdownSec--;
+    var m=Math.floor(focusCountdownSec/60), s=focusCountdownSec%60;
+    g('focusTimerDisplay').textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+    if(focusCountdownSec<=0) rotateFocusDigit();
+  },1000);
+}
+
+function resetFocusConfirm(){
+  fc.lastTickDigit=-1;
+  fc.consecCount=0;
+  fc.consecDir=null;
+  fc.locked=false;
+  fc.tradeDir=null;
+  updateFocusDisplay();
+}
+
+function updateFocusDisplay(){
+  for(var i=0;i<3;i++){
+    var el=g('fcs'+i);
+    if(fc.locked){el.className='cstep ok';el.textContent='✓';}
+    else if(i<fc.consecCount){el.className='cstep ok';el.textContent='✓';}
+    else if(i===fc.consecCount&&running){el.className='cstep cur';el.textContent='?';}
+    else{el.className='cstep';el.textContent='?';}
+  }
+  var de=g('focusConsecDir');
+  if(fc.locked){
+    de.textContent='✅ LOCKED → '+fc.tradeDir;de.style.color='var(--green)';
+  } else if(fc.consecDir){
+    de.textContent=fc.consecDir+' ('+fc.consecCount+'/3)';
+    de.style.color=fc.consecDir==='OVER'?'var(--blue)':'var(--purple)';
+  } else {
+    de.textContent='—';de.style.color='var(--text3)';
+  }
+  var me=g('focusMsg');
+  if(fc.mgActive){
+    me.textContent='MG L'+mgLevel+' — fire '+fc.mgDir+' when digit '+focusDigit+' appears';
+    me.style.color='var(--amber)';
+  } else if(fc.locked){
+    me.textContent='READY: fire '+fc.tradeDir+' next time digit '+focusDigit+' appears';
+    me.style.color='var(--green)';
+  } else if(fc.consecCount>0){
+    me.textContent='Streak '+fc.consecCount+'/3 ('+fc.consecDir+') after digit '+focusDigit;
+    me.style.color='var(--text2)';
+  } else {
+    me.textContent=focusDigit>=0?'Watching — next digit after '+focusDigit+' starts streak':'Start bot to begin';
+    me.style.color='var(--text3)';
+  }
+}
+
+// ── FOCUS TICK PROCESSOR ─────────────────────────────────────
+function processFocus(digit){
+  // MG mode: fire next time focus digit appears
+  if(fc.mgActive){
+    if(digit===focusDigit){
+      log('MG FIRE: '+digit+' → '+fc.mgDir+' $'+currentStake.toFixed(2),'w');
+      fc.lastTickDigit=digit;
+      placeTrade(fc.mgDir);
+      return;
+    }
+    fc.lastTickDigit=digit;
+    return;
+  }
+
+  // LOCKED: fire on focus digit
+  if(fc.locked){
+    if(digit===focusDigit){
+      log('⚡ FIRE: '+digit+' → '+fc.tradeDir+' $'+currentStake.toFixed(2),'g');
+      fc.lastTickDigit=digit;
+      placeTrade(fc.tradeDir);
+      return;
+    }
+    fc.lastTickDigit=digit;
+    return;
+  }
+
+  // CONFIRMATION: only act when previous tick was focus digit
+  if(fc.lastTickDigit===focusDigit){
+    // digit is the "next digit" after focus digit
+    var side=isHigh(digit)?'OVER':'UNDER';
+    if(fc.consecCount===0){
+      fc.consecDir=side; fc.consecCount=1;
+      log('Streak 1/3 ('+side+'): '+focusDigit+'→'+digit,'i');
+    } else if(side===fc.consecDir){
+      fc.consecCount++;
+      log('Streak '+fc.consecCount+'/3 ('+side+'): '+focusDigit+'→'+digit, side==='OVER'?'i':'p');
+      if(fc.consecCount>=3){
+        fc.locked=true;
+        // 3× high(5-9) next digits → UNDER 4 trade; 3× low(0-4) → OVER 5 trade
+        fc.tradeDir=(side==='OVER')?'UNDER':'OVER';
+        log('✅ LOCKED! 3× next='+side+' after '+focusDigit+' → fire '+fc.tradeDir+' on next '+focusDigit,'g');
+        updateEntryHero(focusDigit,fc.tradeDir,'READY — fire '+fc.tradeDir+' on next '+focusDigit);
+      }
+    } else {
+      // broke the streak — start new streak with this digit
+      log('Streak RESET: was '+fc.consecDir+' but '+digit+' after '+focusDigit+' → new streak 1/3 ('+side+')','w');
+      fc.consecDir=side; fc.consecCount=1;
+      if(!fc.locked) updateEntryHero(focusDigit,null,'Streak reset — new streak 1/3 ('+side+')');
+    }
+  }
+
+  fc.lastTickDigit=digit;
+  updateFocusDisplay();
+  if(!fc.locked && focusDigit>=0){
+    updateEntryHero(focusDigit,null,
+      fc.consecCount>0?'Streak '+fc.consecCount+'/3 ('+fc.consecDir+') after '+focusDigit
+      :'Watching — waiting for digit '+focusDigit);
+  }
+}
+
+// ── ENTRY HERO DISPLAY ───────────────────────────────────────
+function updateEntryHero(digit,dir,status){
+  var hd=g('heroDigit'),hdir=g('heroDir'),hs=g('heroStatus');
+  var sd=g('sideEntryDigit'),sdl=g('sideDirLabel');
+  if(digit<0){
+    hd.textContent='–';hd.className='entry-hero-digit none';
+    hdir.textContent='AWAITING';hdir.className='entry-hero-dir none';
+    hs.textContent=status||'Watching...';
+    sd.textContent='–';sd.style.color='var(--text3)';sdl.textContent='–';
+  } else {
+    hd.textContent=digit;hd.className='entry-hero-digit';
+    if(dir==='OVER'){hdir.textContent='▲ OVER 5 TRADE';hdir.className='entry-hero-dir over';sd.style.color='var(--blue)';sdl.textContent='OVER 5';}
+    else if(dir==='UNDER'){hdir.textContent='▼ UNDER 4 TRADE';hdir.className='entry-hero-dir under';sd.style.color='var(--purple)';sdl.textContent='UNDER 4';}
+    else{hdir.textContent='CONFIRMING...';hdir.className='entry-hero-dir none';sd.style.color='var(--amber)';sdl.textContent='CONFIRMING';}
+    hs.textContent=status||'';
+    sd.textContent=digit;
+  }
+  if(dir==='OVER'){g('rDir').textContent='OVER 5';g('rDir').style.color='var(--blue)';}
+  else if(dir==='UNDER'){g('rDir').textContent='UNDER 4';g('rDir').style.color='var(--purple)';}
+  else{g('rDir').textContent='–';g('rDir').style.color='var(--text3)';}
+}
+
+// ── MODE SWITCH ──────────────────────────────────────────────
+function switchMode(m){
+  botMode=m;
+  if(running)stopBot();
+  if(m==='manual'){
+    g('tabManual').classList.add('active');g('tabAuto').classList.remove('active');
+    g('manualPanel').style.display='';g('autoPanel').style.display='none';
+    g('manualConf').style.display='none';g('autoConf').style.display='none';
+    g('rMode').textContent='MANUAL';
+    g('mktSelAuto').value=g('mktSel').value;
+  } else {
+    g('tabManual').classList.remove('active');g('tabAuto').classList.add('active');
+    g('manualPanel').style.display='none';g('autoPanel').style.display='';
+    g('manualConf').style.display='none';g('autoConf').style.display='none';
+    g('rMode').textContent='AUTO SCAN';
+    g('mktSel').value=g('mktSelAuto').value;
+  }
+  updateEntryHero(-1,null,'Watching...');
+}
+
+function getMktSel(){return botMode==='auto'?g('mktSelAuto').value:g('mktSel').value;}
+
+// ── DIGIT FREQUENCY ──────────────────────────────────────────
+function updateFreq(){
+  var box=g('dfreq');box.innerHTML='';
+  var last50=allD.slice(-50),cnt=new Array(10).fill(0);
+  last50.forEach(function(d){cnt[d]++;});
+  for(var i=0;i<10;i++){
+    var isFocus=(i===focusDigit);
+    var col=isFocus?'var(--cyan)':(i<=4?'var(--purple)':'var(--blue)');
+    box.innerHTML+='<div style="text-align:center"><div style="font-size:9px;color:'+col+';">'+(isFocus?'['+i+']':i)+'</div><div style="font-size:10px;font-family:\'Orbitron\',sans-serif;color:var(--text2);">'+cnt[i]+'</div></div>';
+  }
+}
+
+// ── REAL MODE ────────────────────────────────────────────────
+function sendAuthorize(){
+  var raw=g('apiToken').value;
+  // Strip ALL whitespace (spaces, tabs, newlines) — not just trim edges
+  var token=raw.replace(/\s/g,'');
+  if(!token){log('Enter your API token first','r');return;}
+  // Basic sanity: Deriv tokens are alphanumeric, 15 chars
+  if(token.length<10||!/^[A-Za-z0-9]+$/.test(token)){
+    log('Token looks invalid — check for spaces or extra characters','r');
+    g('acctBox').textContent='❌ invalid token format';
+    return;
+  }
+  if(!connected||!ws||ws.readyState!==WebSocket.OPEN){
+    log('Not connected — click Connect first, then Enable Real Trading','r');return;
+  }
+  g('acctBox').textContent='authorizing…';
+  g('realBtn').disabled=true;
+  g('realBtn').textContent='⏳ Authorizing...';
+  log('Sending authorize (token length: '+token.length+')…','w');
+  ws.send(JSON.stringify({authorize:token}));
+}
+
+function toggleRealMode(){
+  if(!realMode){
+    sendAuthorize();
+  } else {
+    realMode=false;apiAuthed=false;realAcctId='';
+    g('realBtn').textContent='⚡ Enable Real Trading';g('realBtn').className='';
+    g('realBtn').disabled=false;
+    g('acctBox').textContent='not authenticated';
+    g('modeLine').textContent='◉ SIM MODE';g('modeLine').className='sim';
+    g('sl0').textContent='SIM BALANCE';
+    log('Real trading disabled — SIM mode','w');
+  }
+}
+
+function onAuthorize(resp){
+  g('realBtn').disabled=false;
+  if(resp.error){
+    g('realBtn').textContent='⚡ Enable Real Trading';
+    g('realBtn').className='';
+    log('Auth FAILED: '+resp.error.message+' (code: '+resp.error.code+')','r');
+    g('acctBox').textContent='❌ auth failed: '+resp.error.message;
+    return;
+  }
+  var acct=resp.authorize;
+  realMode=true;apiAuthed=true;
+  realAcctId=acct.loginid;realBalance=acct.balance;realCurrency=acct.currency;
+  var isDemo=(realAcctId.toUpperCase().indexOf('VRTC')>=0||realAcctId.toUpperCase().indexOf('VRW')>=0);
+  g('realBtn').textContent='🔴 Disable Real Trading';
+  g('realBtn').className='live';
+  var demoTag=isDemo?' [DEMO]':'';
+  g('acctBox').textContent=realAcctId+demoTag+' | '+realCurrency+' '+parseFloat(realBalance).toFixed(2);
+  g('modeLine').textContent='⚡ '+(isDemo?'DEMO':'REAL')+' — '+realAcctId;
+  g('modeLine').className='real';
+  g('sl0').textContent=isDemo?'DEMO BALANCE':'REAL BALANCE';
+  log('✅ Auth OK: '+realAcctId+demoTag+' | '+realCurrency+' '+parseFloat(realBalance).toFixed(2),'g');
+  ws.send(JSON.stringify({balance:1,subscribe:1}));
+}
+
+function onBalance(resp){
+  if(resp.balance&&realMode){
+    realBalance=resp.balance.balance;realCurrency=resp.balance.currency;
+    g('acctBox').textContent=realAcctId+' | '+realCurrency+' '+parseFloat(realBalance).toFixed(2);
+    g('sv0').textContent=realCurrency+' '+parseFloat(realBalance).toFixed(2);
+  }
+}
+
+// ── CONNECT ──────────────────────────────────────────────────
+function toggleConnect(){
+  if(!connected){
+    var sym=getMktSel();
+    g('connectBtn').textContent='Connecting…';
+    g('connectBtn').disabled=true;
+    ws=new WebSocket(WS_URL);
+    ws.onopen=function(){
+      ws.send(JSON.stringify({ticks:sym,subscribe:1}));
+      connected=true;
+      var mkt=document.querySelector('#mktSel option[value="'+sym+'"]');
+      g('statusBar').textContent='◉ '+(mkt?mkt.text:sym);
+      g('statusBar').style.color='var(--green)';
+      g('connectBtn').textContent='Disconnect';
+      g('connectBtn').disabled=false;
+      g('startBtn').disabled=false;
+      log('Connected: '+(mkt?mkt.text:sym),'g');
+      log('✔ Now paste your API token and click ⚡ Enable Real Trading','i');
+    };
+    ws.onmessage=mainHandler;
+    ws.onclose=function(){
+      connected=false;
+      g('statusBar').textContent='◉ Disconnected';g('statusBar').style.color='var(--text3)';
+      g('connectBtn').textContent='Connect';g('connectBtn').disabled=false;
+      g('startBtn').disabled=true;
+      if(running){running=false;setDisplay('idle');log('Connection lost','r');}
+    };
+    ws.onerror=function(e){
+      log('WebSocket error — check your internet connection','r');
+      g('connectBtn').textContent='Connect';g('connectBtn').disabled=false;
+    };
+  } else {
+    if(running)stopBot();
+    ws.close();ws=null;
+  }
+}
+
+// ── MAIN HANDLER ─────────────────────────────────────────────
+function mainHandler(e){
+  var d=JSON.parse(e.data);
+  if(d.msg_type==='tick'){onTick(d.tick);return;}
+  if(d.msg_type==='authorize'){onAuthorize(d);return;}
+  if(d.msg_type==='balance'){onBalance(d);return;}
+  if(d.msg_type==='buy'){
+    if(d.error){
+      log('BUY ERROR: '+d.error.message,'r');
+      handleRealResult(false,currentStake);
+    } else {
+      log('REAL BUY OK | contract '+d.buy.contract_id+' | $'+parseFloat(d.buy.buy_price).toFixed(2),'g');
+      ws.send(JSON.stringify({proposal_open_contract:1,contract_id:d.buy.contract_id,subscribe:1}));
+    }
+    return;
+  }
+  if(d.msg_type==='proposal_open_contract'){
+    var poc=d.proposal_open_contract;
+    if(poc&&poc.is_sold){
+      var won=poc.profit>=0;
+      log('REAL RESULT: '+(won?'WIN':'LOSS')+' profit=$'+parseFloat(poc.profit).toFixed(2),won?'g':'r');
+      handleRealResult(won,parseFloat(poc.buy_price));
+    }
+    return;
+  }
+}
+
+// ── TICK ─────────────────────────────────────────────────────
+function onTick(t){
+  var raw=t.quote, digit=lastDigit(raw);
+  var islo=digit<=4, ishi=digit>=5, isFoc=(digit===focusDigit);
+  g('priceBox').textContent=parseFloat(raw).toFixed(2);
+  g('priceBox').style.color=isFoc?'var(--cyan)':(islo?'var(--purple)':'var(--blue)');
+  g('lastDigitBig').textContent=digit;
+  g('lastDigitBig').style.color=isFoc?'var(--cyan)':(islo?'var(--purple)':'var(--blue)');
+  g('digitRow').textContent=g('mktSel').options[g('mktSel').selectedIndex].text+' | digit: '+digit+(isFoc?' ◈':'');
+  g('rLastD').textContent=digit;
+  g('rLastD').style.color=isFoc?'var(--cyan)':(islo?'var(--purple)':'var(--blue)');
+
+  var tr=g('dtrack'), dc=document.createElement('div');
+  dc.className='dc new'+(isFoc?' en':islo?' lo':' hi');
+  if(isFoc) dc.style.borderColor='var(--cyan)';
+  dc.textContent=digit;
+  if(tr.children.length>=50) tr.removeChild(tr.firstChild);
+  tr.appendChild(dc);
+
+  allD.push(digit);dCnt[digit]++;
+  if(allD.length>500) dCnt[allD.shift()]--;
+  if(allD.length%5===0) updateFreq();
+
+  if(!running||fsmState==='sleeping'||fsmState==='idle') return;
+
+  if(inTrade){
+    if(pendingSimTrade){
+      var ps=pendingSimTrade; pendingSimTrade=null;
+      var won=(ps.dir==='OVER')?(digit>5):(digit<4);
+      handleSimResult(won,ps.stake,ps.dir);
+    }
+    return;
+  }
+
+  processFocus(digit);
+}
+
+// ── PLACE TRADE ──────────────────────────────────────────────
+function placeTrade(dir){
+  if(inTrade) return;
+  inTrade=true;setDisplay('trading');
+  var barrier=dir==='OVER'?'5':'4';
+  if(realMode&&apiAuthed){
+    var sym=getMktSel();
+    var ct=dir==='OVER'?'DIGITOVER':'DIGITUNDER';
+    var req={buy:1,price:currentStake,parameters:{
+      amount:currentStake,basis:'stake',contract_type:ct,
+      currency:realCurrency,duration:1,duration_unit:'t',symbol:sym,barrier:barrier}};
+    log('REAL TRADE: '+ct+' barrier='+barrier+' $'+currentStake.toFixed(2)+' MG L'+mgLevel,'h');
+    flash('⚡ REAL: '+dir+' '+barrier,'trade');
+    g('engMsg').textContent='Real trade placed — waiting result...';
+    ws.send(JSON.stringify(req));
+    return;
+  }
+  if(currentStake>simBal){log('Balance too low','r');inTrade=false;doSL();return;}
+  simBal-=currentStake;updateStats();
+  pendingSimTrade={stake:currentStake,dir:dir};
+  log('SIM TRADE '+dir+' barrier='+barrier+' $'+currentStake.toFixed(2)+' MG L'+mgLevel,'h');
+  flash('TRADE: '+dir+' '+barrier+' $'+currentStake.toFixed(2),'trade');
+  g('engMsg').textContent='Trade open — next tick = result';
+}
+
+// ── SIM RESULT ───────────────────────────────────────────────
+function handleSimResult(won,stake,dir){
+  inTrade=false;
+  if(won){
+    simBal+=parseFloat((stake*PAYOUT).toFixed(2));simWins++;simPL+=parseFloat((stake*PAYOUT).toFixed(2));
+    chainLoss=0;mgLevel=0;slCount=0;currentStake=baseStake;
+    fc.mgActive=false;fc.mgDir=null;
+    resetFocusConfirm();
+    updateStats();updateManualConf();
+    log('WIN +$'+(stake*PAYOUT).toFixed(2)+' | confirmations reset','g');
+    flash('✓ WIN +$'+(stake*PAYOUT).toFixed(2),'win');
+    updateEntryHero(focusDigit,null,'Win! Watching focus digit '+focusDigit+' for new pattern...');
+    setDisplay('watching');
+    startSleep();
+  } else {
+    simLosses++;simPL-=stake;slCount++;chainLoss+=stake;updateStats();
+    log('LOSS -$'+stake.toFixed(2)+' | chain $'+chainLoss.toFixed(2),'r');
+    flash('✗ LOSS -$'+stake.toFixed(2),'loss');
+    if(slCount>=slMax){doSL();return;}
+    mgLevel++;currentStake=parseFloat((chainLoss*mgMult).toFixed(2));
+    fc.mgActive=true;fc.mgDir=dir;
+    fc.locked=false;fc.consecCount=0;fc.consecDir=null;
+    log('MG L'+mgLevel+': wait for digit '+focusDigit+' → fire '+dir,'w');
+    updateEntryHero(focusDigit,dir,'MG L'+mgLevel+' — fire '+dir+' on next '+focusDigit);
+    updateFocusDisplay();updateStats();
+    setDisplay('watching');
+  }
+}
+
+function handleRealResult(won,stake){
+  handleSimResult(won,stake,fc.mgDir||fc.tradeDir||'OVER');
+}
+
+// ── SL ────────────────────────────────────────────────────────
+function doSL(){
+  log('⛔ STOP LOSS | chain $'+chainLoss.toFixed(2),'r');
+  flash('⛔ STOP LOSS — BOT STOPPED','loss');
+  mgLevel=0;slCount=0;chainLoss=0;currentStake=baseStake;
+  fc.mgActive=false;fc.mgDir=null;
+  resetFocusConfirm();inTrade=false;pendingSimTrade=null;
+  updateStats();updateManualConf();stopBot();
+}
+
+// ── SLEEP ─────────────────────────────────────────────────────
+function startSleep(){
+  setDisplay('sleeping');
+  g('sleepBox').className='sbox show';
+  var s=SLP_SECS;g('sleepNum').textContent=s;
+  sleepTimer=setInterval(function(){
+    s--;g('sleepNum').textContent=s;
+    if(s<=0){
+      clearInterval(sleepTimer);sleepTimer=null;
+      g('sleepBox').className='sbox';
+      if(running){setDisplay('watching');log('Cooldown done — resuming','i');}
+    }
+  },1000);
+}
+
+// ── DISPLAY ───────────────────────────────────────────────────
+function setDisplay(s){
+  fsmState=s;
+  var lbl={idle:'IDLE',watching:'WATCHING',trading:'TRADE OPEN',sleeping:'COOLDOWN'};
+  g('phaseBox').textContent='State: '+(lbl[s]||s);
+  g('rState').textContent=lbl[s]||s;
+  var isMG=fc.mgActive;
+  g('modeBadge').textContent=isMG?'MG MODE':(fc.locked?'READY':'CONFIRM MODE');
+  g('modeBadge').className='modeBadge '+(isMG?'mg':(fc.locked?'mg':'cm'));
+  if(s==='watching') g('engMsg').textContent=
+    fc.mgActive?'MG: fire '+fc.mgDir+' on digit '+focusDigit:
+    fc.locked?'READY — fire '+fc.tradeDir+' on digit '+focusDigit:
+    focusDigit>=0?'Focus: '+focusDigit+' | streak '+fc.consecCount+'/3':'Watching...';
+  else if(s==='trading') g('engMsg').textContent='Trade open — next tick = result';
+  else if(s==='sleeping') g('engMsg').textContent='Win — cooling down '+SLP_SECS+'s';
+  else g('engMsg').textContent='--';
+}
+
+function updateStats(){
+  if(!realMode){
+    g('sv0').textContent='$'+simBal.toFixed(2);
+    g('sv0').className='sv '+(simBal>=(parseFloat(g('simBal').value)||100)?'green':'red');
+  }
+  g('sv1').textContent=simWins+' / '+simLosses;
+  g('sv2').textContent=(simPL>=0?'+':'')+'$'+simPL.toFixed(2);
+  g('sv2').className='sv '+(simPL>=0?'green':'red');
+  g('sv3').textContent='L'+mgLevel+' · $'+currentStake.toFixed(2);
+  g('sv4').textContent='$'+chainLoss.toFixed(2);
+  g('rMG').textContent='L'+mgLevel;
+  g('rStake').textContent='$'+currentStake.toFixed(2);
+  g('rChain').textContent='$'+chainLoss.toFixed(2);
+}
+
+function updateManualConf(){
+  updateFocusDisplay();
+  g('rConf').textContent=fc.consecCount+' / 3'+(fc.locked?' LOCKED':'');
+}
+
+// ── BOT CONTROLS ──────────────────────────────────────────────
+function toggleBot(){
+  if(!running){
+    if(botMode==='manual'){
+      baseStake=parseFloat(g('baseStake').value)||0.35;
+      mgMult=parseFloat(g('mgMult').value)||2;
+      slMax=parseInt(g('slCount').value)||4;
+      simBal=parseFloat(g('simBal').value)||100;
+      direction=g('dirSel').value;
+    } else {
+      baseStake=parseFloat(g('baseStakeAuto').value)||0.35;
+      mgMult=parseFloat(g('mgMultAuto').value)||2;
+      slMax=parseInt(g('slCountAuto').value)||4;
+      simBal=parseFloat(g('simBalAuto').value)||100;
+    }
+    currentStake=baseStake;
+    mgLevel=0;slCount=0;chainLoss=0;
+    fc.mgActive=false;fc.mgDir=null;
+    inTrade=false;pendingSimTrade=null;
+    updateStats();updateManualConf();
+    running=true;
+    var fd=pickFocusDigit();
+    setFocusDigit(fd);
+    startFocusCountdown();
+    setDisplay('watching');
+    log('Bot started ['+(realMode?'REAL:'+realAcctId:'SIM')+'] focus='+fd+' stake=$'+baseStake+' mg:x'+mgMult+' sl:'+slMax,'g');
+    g('startBtn').textContent='■ Stop Bot';g('startBtn').className='stop';
+    updateEntryHero(fd,null,'Focus: '+fd+' | watching for consecutive pattern...');
+  } else {
+    stopBot();
+  }
+}
+
+function stopBot(){
+  running=false;inTrade=false;pendingSimTrade=null;
+  if(sleepTimer){clearInterval(sleepTimer);sleepTimer=null;}
+  if(focusCountdownInterval){clearInterval(focusCountdownInterval);focusCountdownInterval=null;}
+  g('sleepBox').className='sbox';
+  fsmState='idle';setDisplay('idle');
+  g('startBtn').textContent='▶ Start Bot';g('startBtn').className='go';
+  g('focusStatusBadge').textContent='IDLE';
+  g('focusStatusBadge').style.cssText='font-size:9px;padding:2px 8px;border-radius:3px;background:var(--bg3);color:var(--text3);border:1px solid var(--border2);letter-spacing:1px;';
+  log('Bot stopped','w');
+}
+
+function resetSim(){
+  stopBot();
+  simBal=parseFloat(g('simBal').value)||100;
+  simWins=0;simLosses=0;simPL=0;
+  mgLevel=0;slCount=0;chainLoss=0;
+  currentStake=parseFloat(g('baseStake').value)||0.35;
+  fc={lastTickDigit:-1,consecCount:0,consecDir:null,locked:false,tradeDir:null,mgActive:false,mgDir:null};
+  focusDigit=-1;
+  allD=[];dCnt=new Array(10).fill(0);
+  g('dtrack').innerHTML='';g('log').innerHTML='';g('dfreq').innerHTML='';
+  g('focusDigitDisplay').textContent='–';
+  g('focusTimerDisplay').textContent='30:00';
+  g('focusMsg').textContent='Start bot to activate focus digit monitoring';
+  g('focusConsecDir').textContent='—';g('focusConsecDir').style.color='var(--text3)';
+  updateStats();updateManualConf();
+  updateEntryHero(-1,null,'Reset complete');
+  log('Reset','');
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+updateStats();updateManualConf();updateFreq();
+updateEntryHero(-1,null,'Connect and start bot to begin...');
+</script>
+</body>
+</html>
